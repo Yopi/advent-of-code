@@ -1,8 +1,10 @@
 (ns adventofcode.day01
     (:require
         [clojure.java.io :as io]
-        [clojure.string :as str]))
-
+        [clojure.string :as str]
+        [clojure.set :as set]
+        [clojure.data.int-map :as i]
+    ))
 
 (def inputdata
     (map #(Integer. %)
@@ -16,16 +18,17 @@
             (slurp (clojure.java.io/file (clojure.java.io/resource  "day01/test2")))
             #"\n")))
 
+; Based on https://stackoverflow.com/a/19896524/557715
+(defn first-d [lst]
+    (reduce
+        (fn [acc [idx nxt]]
+            (if (contains? acc nxt)
+                (reduced nxt)
+                (assoc acc nxt 1)))
+        {} (map-indexed vector lst)))
 
 (def part1
-    (reduce + (map #(Integer. %) inputdata)))
+    (reduce + inputdata))
 
-(defn part2 [c]
-    (let [found (take-n-duplicates c)]
-        (if (> (count found) 1)
-            (first (first found)); Get the value from the frequency map
-            (recur (inc c))))); Iterate
-
-; No easy way to take from a lazy list
-(defn take-n-duplicates [c]
-    (filter #(> (second %) 1) (frequencies (take c (reductions + (map #(Integer. %) (cycle inputdata)))))))
+(def part2
+    (first-d (reductions + (cycle inputdata))))
