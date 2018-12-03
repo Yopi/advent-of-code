@@ -2,9 +2,7 @@
     (:require
         [clojure.java.io :as io]
         [clojure.string :as str]
-        [clojure.set :as set]
-        [clojure.data.int-map :as i]
-    ))
+        [clojure.set :as set]))
 
 (def inputdata
     (map #(Integer. %)
