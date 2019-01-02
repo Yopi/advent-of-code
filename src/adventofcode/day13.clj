@@ -20,18 +20,18 @@
 
 (defn col-to-cart [x o]
     (case o
-        ("<" ">" "^" "v") {:x x :cart o :turns 0}
+        ("<" ">" "^" "v") {:x x :cart o :turns 0 :id x}
         nil))
 
 (defn row-to-carts [y row]
-    (map (fn [obj] (assoc obj :y y))
+    (map (fn [obj] (assoc obj :y y :id (str (get obj :x) y)))
         (map-indexed col-to-cart (str/split row #""))))
 
 
 (def testrails
     (reduce into {}
         (map-indexed row-to-rails
-            (str/split (-> "day13/NmsuN6SP.txt"
+            (str/split (-> "day13/example-internet.txt"
                             io/resource
                             io/file
                             slurp)
@@ -40,7 +40,7 @@
 (def testcarts
     (vec (filter #(> (count %) 2) (reduce into []
             (map-indexed row-to-carts
-                (str/split (-> "day13/NmsuN6SP.txt"
+                (str/split (-> "day13/example-internet.txt"
                                 io/resource
                                 io/file
                                 slurp)
@@ -64,8 +64,8 @@
                                 slurp)
                 #"\n"))))))
 
-(def rails testrails)
-(def carts testcarts)
+(def rails realrails)
+(def carts realcarts)
 
 ; Helper functions
 (defn sort-input [input]
@@ -76,6 +76,14 @@
 
 (defn all-carts-at [carts x y]
     (filter #(and (= (get % :x) x) (= (get % :y) y)) carts))
+
+(defn index-of-cart [carts cart]
+  (loop [carts carts
+         i 0]
+    (cond
+      (= cart (first carts)) i
+      (empty? carts)        nil
+      :else                 (recur (rest carts) (inc i)))))
 
 (defn get-collided-carts [carts]
     (->> carts
@@ -101,8 +109,8 @@
             " "
             r)))
 
-(defn inc-with-max [nbr]
-    (if (> nbr 1)
+(defn inc-with-max [nbr mx]
+    (if (> nbr mx)
         0
         (inc nbr)))
 
@@ -147,9 +155,9 @@
 ; and then repeats those directions starting again with left the fourth time, straight the fifth time
 (defn intersection-turn [cart]
     (case (get cart :turns)
-        0 (assoc cart :cart (turn-left (get cart :cart)) :turns (inc-with-max (get cart :turns)))
-        1 (assoc cart :turns (inc-with-max (get cart :turns)))
-        2 (assoc cart :cart (turn-right (get cart :cart)) :turns (inc-with-max (get cart :turns)))
+        0 (assoc cart :cart (turn-left (get cart :cart)) :turns (inc-with-max (get cart :turns) 1))
+        1 (assoc cart :turns (inc-with-max (get cart :turns) 1))
+        2 (assoc cart :cart (turn-right (get cart :cart)) :turns (inc-with-max (get cart :turns) 1))
     cart))
 
 (defn new-cart [[x y] cart]
@@ -170,33 +178,33 @@
         "v" (new-cart [0 1] cart)
     nil))
 
-(defn tick [local-carts]
-    (loop [cs (sort-input local-carts)
-            i 0]
-        (do
-            ;(print-field rails cs)
-        (if (and (<= (count cs) 1))
-            cs ;; Last cart standing
-            (if (>= i (count cs))
-                (let [collided (get-collided-carts cs)]
-                    (do
-                        (if-not (empty? collided)
-                            (do
-                                (println "Collision")
-                                (println cs)
-                                (println collided)))
-                    (recur (sort-input (drop-all-collided-from cs collided)) 0)))  ;; Remove the collided carts
-                (let [c (nth cs i)]
-                    (recur (assoc cs i (move-cart c)) (inc i))))))))
-
-(defn print-field [rs cs]
-    (spit "map.log"
+(defn print-field [cs]
+    (println
         (str/join "\n"
             (map #(str/join "" %)
              (for [y (range (inc height))]
                 (for [x (range (inc width))]
                     (let [c (cart-at cs x y)
-                            r (rail-at rs x y)]
+                            r (rail-at rails x y)]
                         (if-not (nil? c)
                             (get c :cart)
-                            r)))))) :append true))
+                            r))))))))
+
+(defn tick [local-carts]
+    (loop [cs (sort-input local-carts)
+            tracking-cs cs]
+        (do
+;            (print-field cs)
+        (if (and (<= (count cs) 1) (empty? tracking-cs))
+            cs ;; Last cart standing
+            (if (empty? tracking-cs)
+                (recur (sort-input cs) (sort-input cs)) ; Next tick
+                (let [updated-cs (assoc cs (index-of-cart cs (first tracking-cs)) (move-cart (first tracking-cs)))]
+                    (let [collided (get-collided-carts updated-cs)]
+                        (if-not (empty? collided)
+                            (do
+                                (println "Collision")
+                                (println cs)
+                                (println collided)
+                                (recur (drop-all-collided-from updated-cs collided) (rest (drop-all-collided-from tracking-cs collided))))
+                            (recur updated-cs (sort-input (rest tracking-cs)))))))))))
