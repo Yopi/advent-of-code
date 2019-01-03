@@ -193,8 +193,6 @@
 (defn tick [local-carts]
     (loop [cs (sort-input local-carts)
             tracking-cs cs]
-        (do
-;            (print-field cs)
         (if (and (<= (count cs) 1) (empty? tracking-cs))
             cs ;; Last cart standing
             (if (empty? tracking-cs)
@@ -207,4 +205,4 @@
                                 (println cs)
                                 (println collided)
                                 (recur (drop-all-collided-from updated-cs collided) (rest (drop-all-collided-from tracking-cs collided))))
-                            (recur updated-cs (sort-input (rest tracking-cs)))))))))))
+                            (recur updated-cs (sort-input (rest tracking-cs))))))))))
