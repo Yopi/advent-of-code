@@ -20,8 +20,8 @@
            acc 0]
            (if (zero? cnt)
             acc
-            (recur (calculate-mass cnt) (+ acc (calculate-mass cnt))))
-    ))
+            (let [fuel-for-fuel (calculate-mass cnt)]
+            (recur fuel-for-fuel (+ acc fuel-for-fuel))))))
 
 (def part1
     (reduce + (map calculate-mass inputdata)))
