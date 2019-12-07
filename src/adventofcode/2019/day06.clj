@@ -16,60 +16,53 @@
         (slurp (clojure.java.io/file (clojure.java.io/resource  "2019/day06/test.txt")))
         #"\n"))
 
-(def testdata2
+(defn nodes-in-input [input]
+    (->> input
+        (map #(str/split % #"\)") ,,,)
+        (flatten ,,,)
+        (set ,,,)
+        (seq ,,,)))
+
+(def test-graph-directed
+    (apply uber/add-directed-edges (uber/graph (first (nodes-in-input testdata)))
+        (for [orbit testdata] (str/split orbit #"\)"))))
+
+(def input-graph-directed
+    (apply uber/add-directed-edges (uber/graph (first (nodes-in-input inputdata)))
+        (for [orbit inputdata] (str/split orbit #"\)"))))
+
+
+(defn walk-graph [graph root]
+    (let [orbiters (uber/predecessors graph root)]
+        (if (empty? orbiters)
+            '(0)
+            (for [orbiter orbiters]
+                (concat '(1) (walk-graph graph orbiter))))))
+
+
+(defn part1 [graph]
+    (reduce + (flatten
+        (for [n (uber/nodes graph)] (walk-graph graph n)))))
+
+
+; Part 2
+(def testdata-part2
     (str/split
         (slurp (clojure.java.io/file (clojure.java.io/resource  "2019/day06/test2.txt")))
         #"\n"))
 
-(def nodes-in-testdata
-    (seq
-        (set
-            (flatten
-                (map #(str/split % #"\)") testdata)))))
-(def test-graph (uber/graph (first nodes-in-testdata)))
-
-(def graph-testdata
-    (apply uber/add-directed-edges test-graph
-        (for [orbit testdata] (str/split orbit #"\)"))))
-
-(def nodes-in-testdata2
-    (seq
-        (set
-            (flatten
-                (map #(str/split % #"\)") testdata2)))))
-(def test-graph
-    (uber/graph (first nodes-in-testdata2)))
-
-(def graph-testdata2
-    (apply uber/add-edges test-graph
-        (for [orbit testdata2] (str/split orbit #"\)"))))
-
-(def nodes-in-input
-    (seq
-        (set
-            (flatten
-                (map #(str/split % #"\)") inputdata)))))
-(def g
-    (uber/graph
-        (first nodes-in-input)))
-(def graph
-    (apply uber/add-directed-edges g
-        (for [orbit inputdata] (str/split orbit #"\)"))))
-
-(defn part1 [graph nodes]
-    (count
-        (filter not-empty
-            (filter some?
-                (map ualg/edges-in-path (for [x nodes y nodes] (ualg/shortest-path graph x y)))))))
+(def test-graph-2-bi-directional
+    (apply uber/add-edges (uber/graph (first (nodes-in-input testdata-part2)))
+        (for [orbit testdata-part2] (str/split orbit #"\)"))))
 
 (def graph-bi-directional
     (apply uber/add-edges g
         (for [orbit inputdata] (str/split orbit #"\)"))))
 
-; Remove the first and last jump
-(defn part2 [g]
+(def part2
+    ; Remove the first and last jump
     (-
         (count
             (ualg/edges-in-path
-                (ualg/shortest-path g "YOU" "SAN")))
+                (ualg/shortest-path graph-bi-directional "YOU" "SAN")))
         2))
