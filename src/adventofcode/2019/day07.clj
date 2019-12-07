@@ -32,56 +32,97 @@
 (defn value-at-position [data, pos]
     (nth data (nth data pos)))
 
+(defn parse-opcode [param])
+
+(defn get-value [data param-mode position]
+    (if (= param-mode 0)
+        (value-at-position data position)
+        (nth data position)))
+
+
 (defn execute-computer [data, input, output]
     (async/go
         (let [last-output (atom 0)]
             (loop [data data
                     index 0]
-                (let [opc (nth data index)]
-                    (case opc
-                        1   (recur (assoc data (nth data (+ index 3)) (+ (value-at-position data (+ index 1)) (value-at-position data (+ index 2)))) (+ index 4))
-                        101  (recur (assoc data (nth data (+ index 3)) (+ (nth data (+ index 1)) (value-at-position data (+ index 2)))) (+ index 4))
-                        1101 (recur (assoc data (nth data (+ index 3)) (+ (nth data (+ index 1)) (nth data (+ index 2)))) (+ index 4))
-                        1001 (recur (assoc data (nth data (+ index 3)) (+ (value-at-position data (+ index 1)) (nth data (+ index 2)))) (+ index 4))
-                        2    (recur (assoc data (nth data (+ index 3)) (* (value-at-position data (+ index 1)) (value-at-position data (+ index 2)))) (+ index 4))
-                         102 (recur (assoc data (nth data (+ index 3)) (* (nth data (+ index 1)) (value-at-position data (+ index 2)))) (+ index 4))
-                        1102 (recur (assoc data (nth data (+ index 3)) (* (nth data (+ index 1)) (nth data (+ index 2)))) (+ index 4))
-                        1002 (recur (assoc data (nth data (+ index 3)) (* (value-at-position data (+ index 1)) (nth data (+ index 2)))) (+ index 4))
-                        3    (recur (assoc data (nth data (+ index 1)) (async/<! input)) (+ index 2))
-                        4    (do (reset! last-output (value-at-position data (+ index 1))) (async/>! output (value-at-position data (+ index 1))) (recur data (+ index 2)))
-                        104  (do (reset! last-output (value-at-position data (+ index 1))) (async/>! output (value-at-position data (+ index 1))) (recur data (+ index 2)))
-                        5    (recur data (if (not= (value-at-position data (+ index 1)) 0) (value-at-position data (+ index 2)) (+ index 3)))
-                        105  (recur data (if (not= (nth data (+ index 1)) 0) (value-at-position data (+ index 2)) (+ index 3)))
-                        1105 (recur data (if (not= (nth data (+ index 1)) 0) (nth data (+ index 2)) (+ index 3)))
-                        1005 (recur data (if (not= (value-at-position data (+ index 1)) 0) (nth data (+ index 2)) (+ index 3)))
-                        6    (recur data (if (= (value-at-position data (+ index 1)) 0) (value-at-position data (+ index 2)) (+ index 3)))
-                        106  (recur data (if (= (nth data (+ index 1)) 0) (value-at-position data (+ index 2)) (+ index 3)))
-                        1106 (recur data (if (= (nth data (+ index 1)) 0) (nth data (+ index 2)) (+ index 3)))
-                        1006 (recur data (if (= (value-at-position data (+ index 1)) 0) (nth data (+ index 2)) (+ index 3)))
-                        7    (recur (if (< (value-at-position data (+ index 1)) (value-at-position data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        107  (recur (if (< (nth data (+ index 1)) (value-at-position data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        1107 (recur (if (< (nth data (+ index 1)) (nth data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        1007 (recur (if (< (value-at-position data (+ index 1)) (nth data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        8    (recur (if (= (value-at-position data (+ index 1)) (value-at-position data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        108  (recur (if (= (nth data (+ index 1)) (value-at-position data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        1108 (recur (if (= (nth data (+ index 1)) (nth data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
-                        1008 (recur (if (= (value-at-position data (+ index 1)) (nth data (+ index 2))) (assoc data (nth data (+ index 3)) 1) (assoc data (nth data (+ index 3)) 0)) (+ index 4))
+                (let [opc (nth data index)
+                        opcode (mod (nth data index) 100)
+                        p1 (mod (int (/ (nth data index) 100)) 10)
+                        p2 (mod (int (/ (nth data index) 1000)) 10)
+                        p3 (mod (int (/ (nth data index) 10000)) 10)]
+                    (case opcode
+                        1   (recur
+                                ; Data
+                                (assoc data (get-value data 1 (+ index 3))
+                                    (+ (get-value data p1 (+ index 1)) (get-value data p2 (+ index 2))))
+                                ; Index
+                                (+ index 4))
+                        2   (recur
+                                ; Data
+                                (assoc data (get-value data 1 (+ index 3))
+                                    (* (get-value data p1 (+ index 1)) (get-value data p2 (+ index 2))))
+                                ; Index
+                                (+ index 4))
+
+                        3   (recur
+                                ; Data
+                                (assoc data (nth data (+ index 1)) (async/<! input))
+                                ; Index
+                                (+ index 2))
+                        4   (do
+                                (reset! last-output (get-value data p1 (+ index 1)))    ; Set last-output (For final state)
+                                (async/>! output (get-value data p1 (+ index 1)))       ; Write output to output channel
+                                (recur
+                                    data
+                                    (+ index 2)))
+                        5   (recur data
+                                (if (not= (get-value data p1 (+ index 1)) 0)
+                                    (get-value data p2 (+ index 2))
+                                    (+ index 3)))
+                        6   (recur data
+                                (if (= (get-value data p1 (+ index 1)) 0)
+                                    (get-value data p2 (+ index 2))
+                                    (+ index 3)))
+                        7   (recur
+                                ; If p1 < p2; Set p3 = 1, otherwise p3 = 0
+                                (if (< (get-value data p1 (+ index 1)) (get-value data p2 (+ index 2)))
+                                    (assoc data (nth data (+ index 3)) 1)
+                                    (assoc data (nth data (+ index 3)) 0))
+                                ; Index
+                                (+ index 4))
+                        8   (recur
+                                ; If p1 == p2; Set p3 = 1, otherwise p3 = 0
+                                (if (= (get-value data p1 (+ index 1)) (get-value data p2 (+ index 2)))
+                                    (assoc data (nth data (+ index 3)) 1)
+                                    (assoc data (nth data (+ index 3)) 0))
+                                ; Index
+                                (+ index 4))
                         99   @last-output))
                 ))))
 
-(defn next-amp [amp]
+(defn next-amp [amp, max-amps]
     (if (> amp 3)
         0
         (+ amp 1)))
 
 (defn initialize-channels [input-seq, channels]
-    (for [c (range 5)]
+    (for [c (range (count input-seq))]
         (let [i (nth input-seq c)]
             (async/offer! (nth channels c) i)
             (if (= 0 c)
                 (async/offer! (nth channels 0) 0)
                 false)
             (nth channels c))))
+
+
+;; Executes computer on data with the input value of start. Single threaded
+(defn run-computer [data, start]
+    (let [input-channels [(async/chan 1000) (async/chan 1000)]]
+        (let [channels (initialize-channels [start] input-channels)]
+            (hash-map
+                :value
+                (async/<!!
+                    (execute-computer data (first channels) (last channels)))))))
 
 (defn solution [data input-sequence]
         (for [input-sequence (permutations input-sequence)]
@@ -92,9 +133,8 @@
                     :value
                         (async/<!!
                         (last
-                            (for [amp (range 5)]
-
-                                (execute-computer data (nth channels amp) (nth channels (next-amp amp)))))))))))
+                            (for [amp (range (count input-sequence))]
+                                (execute-computer data (nth channels amp) (nth channels (next-amp amp (count input-sequence))))))))))))
 
 (def part1
     (apply max-key :value
