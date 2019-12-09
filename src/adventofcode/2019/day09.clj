@@ -150,3 +150,9 @@
                 :value
                 (async/<!!
                     (execute-computer (convert-input data) (first channels) (last channels)))))))
+
+(def part1
+    (run-computer inputdata [1]))
+
+(def part2
+    (run-computer inputdata [2]))
