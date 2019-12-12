@@ -7,6 +7,7 @@
                  [org.clojure/core.async "0.6.532"]
                  [net.mikera/core.matrix "0.62.0"]
                  [net.mikera/vectorz-clj "0.48.0"]
-                 [ubergraph "0.8.1"]]
+                 [ubergraph "0.8.1"]
+                 [org.clojure/math.combinatorics "0.1.6"]]
   :profiles {:dev {:resource-paths ["resources"]}}
   :jvm-opts ["-Xmx8G"])
