@@ -4,7 +4,7 @@
         [clojure.string :as str]
         [clojure.set :as set]
         [clojure.pprint :as pp]
-        [clojure.math.combinatorics :as combo]))
+        [clojure.math.numeric-tower :as math]))
 
 (defn print-coordinates [data]
     (println
@@ -41,6 +41,13 @@
         (if (= x1 x2)
             0
             1))) 
+
+(defn difference-coordinates [c1 c2]
+    (for [i (range (count c1))
+            :let [m1 (nth c1 i)
+                    m2 (nth c2 i)]]
+        (map #(reduce - %) (transpose m1 m2)))
+)
                  
 (defn calc-velocity [velocity m1 m2]
     (-> (vec velocity)
@@ -67,22 +74,37 @@
     ])
 
 (defn apply-velocity [coordinates velocities]
-    (for [cv (partition 2 (interleave coordinates velocities))]
-        (map #(reduce + %) (apply transpose cv))))
+    (doall (for [cv (partition 2 (interleave coordinates velocities))]
+        (doall (map #(reduce + %) (apply transpose cv))))))
+
+
 
 (defn simulate-gravity [data total]
     (loop [coordinates data
+            previous-coordinates data
             velocities (init-velocities)
             steps 0]
             (if (= steps total)
                 [steps coordinates velocities]
                 (let [new-velocities (calc-velocities coordinates velocities)]
+                    (if (= '(0 0 0 0) (map first velocities))
+                        (println "x: " steps)
+                        0)
+                    (if (= '(0 0 0 0) (map second velocities))
+                        (println "y: " steps)
+                        0)
+                    (if (= '(0 0 0 0) (map last velocities))
+                        (println "z: " steps)
+                        0)
+                    (if (> steps 280000)
+                        0
                     (recur
                        (apply-velocity coordinates new-velocities)
+                       coordinates
                        new-velocities
                        (+ 1 steps))
                     )
-            )))
+            ))))
 
 (defn calc-total-energy [coordinates velocities]
     (reduce + 
@@ -94,9 +116,16 @@
             (reduce + (map #(Math/abs %) velocity)))
     )))
 
-(def part1 
+(defn part1 [] 
     (let [out (simulate-gravity inputdata 1000)
             coordinates (nth out 1)
             velocities (nth out 2)]
             (calc-total-energy coordinates velocities)))
+
+
+(defn part2 [] 
+    (let [x 167624
+            y 231614
+            z 102356]
+        (math/lcm (math/lcm x y) z)))
 
