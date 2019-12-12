@@ -5,11 +5,8 @@
         [clojure.pprint :as pp]
         [clojure.core.async :as async]))
 
-(defn exp [x n]
-  (reduce * (repeat n x)))
-
 (def inputdata
-    (vec (map #(num (BigInteger. %))
+    (vec (map #(bigint %)
         (str/split
             (str/trim (slurp (clojure.java.io/file (clojure.java.io/resource  "2019/day11/input.txt"))))
             #","))))
@@ -20,15 +17,12 @@
 (defn value-at-position [data, pos]
     (get data (get data pos 0) 0))
 
-(defn parse-opcode [param])
-
 (defn get-value [data param-mode position relative-base]
     (case param-mode
         0   (value-at-position data position)
         1   (get data position 0)
         2   (get data (+ (get data position 0) relative-base) 0)
     ))
-
 
 (defn alternative-get-value [data param-mode position relative-base]
     (case param-mode
@@ -49,7 +43,6 @@
                         p2 (mod (int (/ (get data index) 1000)) 10)
                         p3 (mod (int (/ (get data index) 10000)) 10)]
                     (do
-                        ;(println opc)
                         ;(println (get-value data p1 (+ index 1) relative-base) (get-value data p2 (+ index 2) relative-base) (get-value data p3 (+ index 3) relative-base))
                     (case opcode
                         1   (recur
@@ -132,97 +125,82 @@
                                 (+ index 2)
                                 ; RB
                                 (+ relative-base (get-value data p1 (+ index 1) relative-base)))
-                        99   (do
+                        99  (do
                                 (async/close! input)
                                 (async/close! output)
-                                @last-output
-                                )
-                        )))
+                                @last-output)
+                            )))
                 ))))
 
-; 0 = left 90 degrees, 1 = right 90 degrees
-(defn direction-from-turn [direction turn]
-    (case direction
-        0 (if (= turn 0) 1 3)
-        1 (if (= turn 0) 2 0)
-        2 (if (= turn 0) 3 1)
-        3 (if (= turn 0) 0 2)
-    ))
-
-(defn step-forward [direction position]
-    (case direction
-        0 [(first position) (- (second position) 1)]
-        1 [(- (first position) 1) (second position)]
-        2 [(first position) (+ (second position) 1)]
-        3 [(+ (first position) 1) (second position)]
-    ))
-
-
-(defn been-painted? [painting position]
-    (first (map #(get % :value) (filter #(= (:pos %) position) painting))))
-
-(defn color-of-position [painting position]
-    (let [color (been-painted? painting position)]
-        (if (nil? color)
-            0
-            (num color))))
-
-; Direction 0^ 1< 2v 3>
-(defn run-robot [input, output]
-    (async/go
-        (loop [painting []
-                direction 0
-                position [0 0]]
-            (let [color (async/<! input)
-                    turn (async/<! input)]
-                (println "paint " color " and turn " turn)
-                (println "current pos " position ", current dir " direction)
-                (if (nil? color)
-                    painting
-                    (do
-                        (async/>! output (color-of-position painting position))
-                        (recur
-                            (doall (concat painting [{:pos position :value color :existed (some? (been-painted? painting position)) }]))
-                            (direction-from-turn direction turn)
-                            (step-forward (direction-from-turn direction turn) position)
-                        )
-                    )
-                )
-            )
-        )
-    )
-)
-
-
-(def testdata (let [chans (initialize-channels [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0] [(async/chan 1000) (async/chan 1000)])]
-    (async/close! (first chans))
-    (async/close! (last chans))
-    (run-robot (first chans) (last chans))))
-
-(def testrun (async/<!! testdata))
 
 (defn borders [painting]
-    (let [positions (map #(get % :pos) painting)
-            x (map first positions)
-            y (map second positions)]
-        [
-            [(apply min x) (apply max x)]
-            [(apply min y) (apply max y)]
-        ]
+    (let [positions (keys painting)
+            xs (map first positions)
+            ys (map second positions)]
+        [[(apply min xs) (apply max xs)]
+         [(apply min ys) (apply max ys)]]
     ))
 
 (defn paint [painting]
-    (let [corners (borders painting)
+    (for [row (let [corners (borders painting)
             x-vals (first corners)
             y-vals (second corners)]
         (vec (for [y (range (first y-vals) (+ (second y-vals) 1))]
             (vec (flatten (for [x (range (first x-vals) (+ (second x-vals) 1))]
-                (let [position (last (filter #(= (:pos %) [x y]) painting))
-                        color (get position :value)]
+                (let [color (get painting [x y])]
                     (if (= color 1)
-                        ["#"]
-                        ["."]
-                    )))))))))
+                        [(str "#")]
+                        [(str " ")]
+                    ))))))))]
+        (println row)))
+
+(defn get-current-color [painting pos]
+    (get painting pos 0))
+
+(defn turn-robot [current-direction direction]
+    (if (= direction 0)
+        (case current-direction 
+            "UP"    "LEFT"
+            "LEFT"  "DOWN"
+            "DOWN"  "RIGHT"
+            "RIGHT" "UP")
+        (case current-direction 
+            "UP"    "RIGHT"
+            "RIGHT" "DOWN"
+            "DOWN"  "LEFT"
+            "LEFT"  "UP")))
+
+(defn move-robot [current-position direction]
+    (case direction
+        "UP"     [(first current-position) (- (last current-position) 1)]
+        "LEFT"   [(- (first current-position) 1) (last current-position)]
+        "DOWN"   [(first current-position) (+ (last current-position) 1)]
+        "RIGHT"  [(+ (first current-position) 1) (last current-position)]
+    ))
+
+; Read color and send color to output
+; Get (color) and (direction) from input
+; Paint color
+; Turn
+; Move forward
+(defn robot [input, output]
+    (loop [current-pos [0, 0]
+            current-direction "UP"
+            painting {}
+            step 0]
+            (let [color (async/<!! input)
+                    direction (async/<!! input)]
+                ;(println step)
+                (if (and (nil? color) (nil? direction))
+                    painting
+                    (let [new-painting (into painting {current-pos color}) 
+                            new-direction (turn-robot current-direction direction)
+                            new-position (move-robot current-pos new-direction)]
+                        (let [current-color (get-current-color painting new-position)]
+                            (async/put! output current-color)
+                        (recur new-position new-direction new-painting (+ step 1))
+                    ))
+))))
 
 (defn initialize-channels [input-seq, channels]
     (last (for [i input-seq]
@@ -234,18 +212,19 @@
 (defn run-computer [data, start]
     (let [io-channels [(async/chan 1000) (async/chan 1000)]]
         (let [channels (initialize-channels start io-channels)]
-            (let [robot (run-robot (last channels) (first channels))]
-                (hash-map
-                    :value
-                    (async/<!!
-                        (execute-computer (convert-input data) (first channels) (last channels)))
-                    :painting
-                    robot
-                    :channels channels
-                )))))
+            (hash-map
+                :output (last channels)
+                :value
+                (execute-computer (convert-input data) (first channels) (last channels))
+                :painting
+                (robot (last channels) (first channels))
+                ))))
 
-;(def part1
-;    (run-computer inputdata [0]))
+(def part1
+    (let [painting (get (run-computer inputdata [0]) :painting)]
+        (paint painting)
+        (count painting)))
 
-;(def part2
-;    (run-computer inputdata [2]))
+(def part2 
+    (let [painting (get (run-computer inputdata [1]) :painting)]
+        (paint painting)))
