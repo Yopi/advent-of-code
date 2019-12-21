@@ -72,7 +72,7 @@
                         3   (recur
                                 ; Data
                                 (let [in (async/<! input)]
-                                    (println "Reading input:" in)
+                                    ;(println "Reading input:" in)
                                     (assoc data (alternative-get-value data p1 (+ index 1) relative-base) in))
                                 ; Index
                                 (+ index 2)
@@ -216,3 +216,15 @@
                                 (string-to-ascii "OR T J") [10]
                                 (string-to-ascii "AND D J") [10]
                                 (string-to-ascii "WALK") [10])))
+
+(defn part2 []
+    (run-computer inputdata (concat
+        (string-to-ascii "OR A J") [10]
+        (string-to-ascii "AND B J") [10]
+        (string-to-ascii "AND C J") [10]
+        (string-to-ascii "NOT J J") [10]
+        (string-to-ascii "AND D J") [10]
+        (string-to-ascii "OR E T") [10]
+        (string-to-ascii "OR H T") [10]
+        (string-to-ascii "AND T J") [10]
+        (string-to-ascii "RUN") [10])))
