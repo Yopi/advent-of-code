@@ -37,7 +37,7 @@
         2   (+ (get data position 0) relative-base)))
 
 
-(defn execute-computer [data, input, output]
+(defn execute-computer [data, input, output, nat-channel]
     (async/thread
         (let [last-output (atom 0)
                 output-channel (atom 0)
@@ -75,7 +75,6 @@
                                 ; Data
                                 (let [val (async/poll! input)
                                       in (if (nil? val) -1 val)]
-                                    (if (not= in -1) (println "Reading:" in))
                                     (assoc data (alternative-get-value data p1 (+ index 1) relative-base) in))
                                 ; Index
                                 (+ index 2)
@@ -83,10 +82,12 @@
                                 relative-base)
                         4   (do
                                 (reset! last-output (get-value data p1 (+ index 1) relative-base))    ; Set last-output (For final state)
-                                (println "Output-channel:" @output-channel)
                                 (if (= (mod @output-count 3) 0)
                                     (reset! output-channel (get-value data p1 (+ index 1) relative-base))
-                                    (async/put! (nth output @output-channel) (get-value data p1 (+ index 1) relative-base)))       ; Write output to output channel
+                                    (if (= @output-channel 255)
+                                        (async/put! nat-channel (get-value data p1 (+ index 1) relative-base))
+                                        (async/put! (nth output @output-channel) (get-value data p1 (+ index 1) relative-base)))
+                                    )       ; Write output to output channel
                                 (swap! output-count inc)
                                 (recur
                                     ; Data
@@ -176,6 +177,23 @@
                     offer (async/put! c i)]]
         c))
 
+;; Executes computer on data with the input value of start.
+(defn run-computer [data, io-channels, nat-channel]
+    (let [channels (initialize-channels [] io-channels)]
+        (hash-map
+            :values
+            (doall (for [c channels] (execute-computer (convert-input data) c channels nat-channel)))
+            :channels
+            channels
+        )))
+
+(defn part1 []
+    (let [nat-channel (async/chan 1000)]
+        (run-computer inputdata (doall (for [i (range 50)] (async/chan 1000))) nat-channel)
+        (println "x:" (async/<!! nat-channel))
+        (println "y:" (async/<!! nat-channel)))
+    )
+
 (defn network-idle? [channels]
     (if (= (reduce + (map #(.count (.buf %)) channels)) 0)
         true
@@ -187,11 +205,12 @@
                last-y nil
                delivered-xs []
                delivered-ys []]
+            ;(println last-x "," last-y)
             (if (and (network-idle? channels) (some? last-x))
                 (do
-                    (println "Delivering x,y:" last-x last-y)
-                    (if (contains? delivered-ys last-y)
-                        (println "Already delivered:" delivered-ys))
+                    (println delivered-ys)
+                    (if (= last-y (last delivered-ys))
+                        (println "Delivered previously:" last-y))
                     (async/>!! (first channels) last-x) ; Send x to 0
                     (async/>!! (first channels) last-y) ; Send y to 0
                     (recur nil nil (conj delivered-xs last-x) (conj delivered-ys last-y)))
@@ -201,39 +220,18 @@
                         (let [new-y (async/<!! input)] ; We know that y will come if there was an x
                             (recur new-x new-y delivered-xs delivered-ys)))))))
 )
-
 ;; Executes computer on data with the input value of start.
-(defn run-computer [data, io-channels]
-    (let [channels (initialize-channels [] (drop-last io-channels))]
+(defn run-computer-with-nat [data, io-channels, nat-channel]
+    (let [channels (initialize-channels [] io-channels)]
         (hash-map
             :values
-            (doall (for [c channels] (execute-computer (convert-input data) c channels)))
+            (doall (for [c channels] (execute-computer (convert-input data) c channels nat-channel)))
             :channels
             channels
             :nat
-            (nat (last io-channels) channels)
+            (nat nat-channel channels)
         )))
 
-
-;(def channels (for [i (range 50)] (async/chan 1000)))
-;
-;(def initialized-channels (initialize-channels [] channels))
-;
-;(defn run-computer [data, channels]
-;            (hash-map
-;                :values
-;                (doall (for [c channels] (execute-computer (convert-input data) c channels)))
-;                :channels
-;                channels
-;            ))
-;
-
-;(defn part1 []
-;    (run-computer inputdata initialized-channels)
-;)
-;
-
-
-(defn part1 []
-    (run-computer inputdata (doall (for [i (range 51)] (async/chan 1000))))
+(defn part2 []
+    (run-computer-with-nat inputdata (doall (for [i (range 50)] (async/chan 1000))) (async/chan 1000))
 )
