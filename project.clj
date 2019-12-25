@@ -5,6 +5,7 @@
             :url "https://unlicense.org"}
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/core.async "0.6.532"]
+                 [org.clojure/math.numeric-tower "0.0.4"]
                  [net.mikera/core.matrix "0.62.0"]
                  [net.mikera/vectorz-clj "0.48.0"]
                  [ubergraph "0.8.1"]
