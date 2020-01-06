@@ -186,17 +186,6 @@
 
 (defn build-graph-with-levels [i levels portals]
     (as-> (build-initial-graph i (uber/graph) 0) g
-        ;(build-initial-graph i g -11)
-        ;(build-initial-graph i g -10)
-        ;(build-initial-graph i g -9)
-        ;(build-initial-graph i g -8)
-        ;(build-initial-graph i g -7)
-        ;(build-initial-graph i g -6)
-        ;(build-initial-graph i g -5)
-        ;(build-initial-graph i g -4)
-        ;(build-initial-graph i g -3)
-        ;(build-initial-graph i g -2)
-        ;(build-initial-graph i g -1)
         (build-initial-graph i g 1)
         (build-initial-graph i g 2)
         (build-initial-graph i g 3)
@@ -207,17 +196,35 @@
         (build-initial-graph i g 8)
         (build-initial-graph i g 9)
         (build-initial-graph i g 10)
+        (build-initial-graph i g 11)
         (build-initial-graph i g 12)
-        ;(link-portals-with-levels g -10 portals (height i) (width i))
-        ;(link-portals-with-levels g -9 portals (height i) (width i))
-        ;(link-portals-with-levels g -8 portals (height i) (width i))
-        ;(link-portals-with-levels g -7 portals (height i) (width i))
-        ;(link-portals-with-levels g -6 portals (height i) (width i))
-        ;(link-portals-with-levels g -5 portals (height i) (width i))
-        ;(link-portals-with-levels g -4 portals (height i) (width i))
-        ;(link-portals-with-levels g -3 portals (height i) (width i))
-        ;(link-portals-with-levels g -2 portals (height i) (width i))
-        ;(link-portals-with-levels g -1 portals (height i) (width i))
+        (build-initial-graph i g 13)
+        (build-initial-graph i g 14)
+        (build-initial-graph i g 15)
+        (build-initial-graph i g 16)
+        (build-initial-graph i g 17)
+        (build-initial-graph i g 18)
+        (build-initial-graph i g 19)
+        (build-initial-graph i g 20)
+        (build-initial-graph i g 21)
+        (build-initial-graph i g 22)
+        (build-initial-graph i g 23)
+        (build-initial-graph i g 24)
+        (build-initial-graph i g 25)
+        (build-initial-graph i g 26)
+        (build-initial-graph i g 27)
+        (build-initial-graph i g 28)
+        (build-initial-graph i g 29)
+        (build-initial-graph i g 30)
+        (build-initial-graph i g 31)
+        (build-initial-graph i g 32)
+        (build-initial-graph i g 33)
+        (build-initial-graph i g 34)
+        (build-initial-graph i g 35)
+        (build-initial-graph i g 36)
+        (build-initial-graph i g 37)
+        (build-initial-graph i g 38)
+        (build-initial-graph i g 39)
         (link-portals-with-levels g 0 portals (height i) (width i))
         (link-portals-with-levels g 1 portals (height i) (width i))
         (link-portals-with-levels g 2 portals (height i) (width i))
@@ -230,56 +237,48 @@
         (link-portals-with-levels g 9 portals (height i) (width i))
         (link-portals-with-levels g 10 portals (height i) (width i))
         (link-portals-with-levels g 11 portals (height i) (width i))
+        (link-portals-with-levels g 12 portals (height i) (width i))
+        (link-portals-with-levels g 13 portals (height i) (width i))
+        (link-portals-with-levels g 14 portals (height i) (width i))
+        (link-portals-with-levels g 15 portals (height i) (width i))
+        (link-portals-with-levels g 16 portals (height i) (width i))
+        (link-portals-with-levels g 17 portals (height i) (width i))
+        (link-portals-with-levels g 18 portals (height i) (width i))
+        (link-portals-with-levels g 19 portals (height i) (width i))
+        (link-portals-with-levels g 20 portals (height i) (width i))
+        (link-portals-with-levels g 21 portals (height i) (width i))
+        (link-portals-with-levels g 22 portals (height i) (width i))
+        (link-portals-with-levels g 23 portals (height i) (width i))
+        (link-portals-with-levels g 24 portals (height i) (width i))
+        (link-portals-with-levels g 25 portals (height i) (width i))
+        (link-portals-with-levels g 26 portals (height i) (width i))
+        (link-portals-with-levels g 27 portals (height i) (width i))
+        (link-portals-with-levels g 28 portals (height i) (width i))
+        (link-portals-with-levels g 29 portals (height i) (width i))
+        (link-portals-with-levels g 30 portals (height i) (width i))
+        (link-portals-with-levels g 31 portals (height i) (width i))
+        (link-portals-with-levels g 32 portals (height i) (width i))
+        (link-portals-with-levels g 33 portals (height i) (width i))
+        (link-portals-with-levels g 34 portals (height i) (width i))
+        (link-portals-with-levels g 35 portals (height i) (width i))
+        (link-portals-with-levels g 36 portals (height i) (width i))
+        (link-portals-with-levels g 37 portals (height i) (width i))
+        (link-portals-with-levels g 38 portals (height i) (width i))
+        (link-portals-with-levels g 39 portals (height i) (width i))
         ))
 
-
-(defn shortest-path-at-level-zero-recur [graph
-        node
-        end-pos
-        visited
-        recursion
-        cumulative-dist
-        steps]
-    (if (> steps 1000)
-        nil ; {:finished false :dist cumulative-dist :recursion recursion}
-        (if (get visited [(first node) (second node) recursion])
-            nil ; {:dist cumulative-dist :recursion recursion :finished false}
-            (if (and (= node end-pos) (= recursion 0))
-                {:dist cumulative-dist :recursion recursion}
-                (for [out-edge (uber/out-edges graph node)]
-                        (let [out-edge-attrs (uber/attrs graph out-edge)
-                              neighbor (get out-edge :dest)]
-
-                        (if (= node end-pos)
-                            (println "Found end, recursion:" recursion ", dist:" cumulative-dist ", steps:" steps))
-
-                        (shortest-path-at-level-zero-recur
-                                graph
-                                neighbor
-                                end-pos
-                                (assoc visited [(first node) (second node) recursion] 1)
-                                (+ recursion (get out-edge-attrs :recursion))
-                                (+ cumulative-dist (get out-edge-attrs :weight))
-                                (+ steps 1)
-                        ))
-                ))
-            )))
-
-(defn shortest-path-at-level-zero [graph node end-pos]
-    (shortest-path-at-level-zero-recur graph node end-pos {} 0 0 0))
 
 (defn path-from-start-to-end-level-zero [data]
     (let [portals (get-all-portals data)
         graph (build-graph-with-levels data 8 portals)
         start-pos (last (apply concat (filter #(= (first %) "AA") portals)))
         end-pos (last (apply concat (filter #(= (first %) "ZZ") portals)))]
-        ;(uber/pprint graph)
         (println "Start:" start-pos)
         (println "End:" end-pos)
-        ;(ualg/edges-in-path
+        (shortest-path-at-level-zero graph start-pos end-pos)
         (let [path (ualg/shortest-path graph {
-                :start-node (concat start-pos [4])
-                :end-node (concat end-pos [4])
+                :start-node (concat start-pos [0])
+                :end-nodes [(concat end-pos [0])]
                 :cost-fn (fn [e] (+ (uber/attr graph e :weight)))
                 ;:traverse true
             })
@@ -287,11 +286,13 @@
             edges-with-attrs (map #(uber/edge-with-attrs graph %) edges-in-path)
             ]
             edges-with-attrs
-            ;(ualg/nodes-in-path (last path))
-            )
-        ;graph
-        ;)
+        )
         ))
 
 (defn part2 []
-    (path-from-start-to-end-level-zero inputdata))
+    (- (reduce +
+        (map #(if (= % 0) -1 1)
+            (map #(get % :weight)
+                (map #(nth % 2)
+                    (path-from-start-to-end-level-zero inputdata)))))
+        2))
