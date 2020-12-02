@@ -30,10 +30,9 @@
        1 0))
 
 (def part1 (reduce + (map #(valid-password %) inputdata)))
-part1
 
 (defn valid-password-2 [input]
-  (let [frst (- (get input :min) 1)
+  (if (let [frst (- (get input :min) 1)
         scnd (- (get input :max) 1)
         password (get input :password)
         char (get input :char)
@@ -44,12 +43,10 @@ part1
      (and (if (not= (get password frst) char) true false)
           (if (= (get password scnd) char) true false)))
 
-    ))
+    ) 1 0))
 
 
 (def part2 (reduce + (map #(valid-password-2 %) inputdata)))
-part2
-
 
 (comment
   (get (nth testdata 0) :char)
@@ -57,4 +54,6 @@ part2
   (and (if (>= 0 1) true false) (if (<= 0 3) true false))
   (valid-password (nth testdata 0))
   (valid-password-2 (nth testdata 2))
-  (map #(valid-password %) testdata))
+  part1
+  (map #(valid-password %) testdata)
+  part2)
