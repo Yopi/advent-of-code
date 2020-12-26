@@ -1,15 +1,32 @@
 (ns adventofcode.2020.day23
   (:require
-   [clojure.java.io :as io]
    [clojure.string :as str]
-   [clojure.set :as s]))
+   [ubergraph.core :as uber]))
+
+(defn rotate [v rotations]
+  (take (count v) (drop rotations (cycle v))))
 
 (defn parse-input [in]
   (let [cups (map #(Integer. %) (re-seq #"\d" in))]
-    cups))
+    {:graph (apply uber/digraph (vec (zipmap cups (rotate cups 1))))
+     :first-cup (first cups)
+     :max-value (apply max cups)}))
+
+(defn parse-input-extras [in]
+  (let [cups (map #(Integer. %) (re-seq #"\d" in))
+        m (apply max cups)
+        cups-extra (concat cups (range (inc m) 1000001))
+        cups-labels (concat (drop 1 cups-extra) [(first cups-extra)])]
+    {:graph (apply uber/digraph (vec (zipmap cups-extra cups-labels)))
+     :first-cup (first cups)
+     :max-value 1000000}))
 
 (def inputdata (parse-input "952316487"))
 (def testdata (parse-input "389125467"))
+
+(def inputdata-large (parse-input-extras "952316487"))
+(def testdata-large (parse-input-extras "389125467"))
+
 
 (defn get-destination-cup [cups-picked-up
                            current-cup
@@ -21,57 +38,57 @@
       :else (recur (- selected-cup 1))
       )))
 
-(defn alt-subvec [v s & args]
-  (let [e (or (first args) (count v))]
-  (cond
-    (> s e) []
-    (> s (count v)) []
-    (> e (count v)) []
-    :else (subvec v s e)
-    )
-  ))
-
-(defn rotate [v rotations]
-  (take (count v) (drop rotations (cycle v))))
-
 (defn move [in max-moves]
-  (loop [i in
-         move 0
-         selected-index 0]
+  (println "Max moves: " max-moves)
+  (loop [graph (get in :graph)
+         max-value (get in :max-value)
+         current-cup (get in :first-cup)
+         move 0]
     (if (= move max-moves)
-      (rotate i selected-index)
-      (let [rotated-in (rotate i selected-index)
-            cup (first rotated-in)
-            cups (rest rotated-in)
-            pick-up               (take 3 cups)
-            rest-cups             (drop 3 cups)
-            without-pick-up       (concat [cup] rest-cups)
-            destination-cup       (get-destination-cup pick-up cup (apply max testdata))
-            destination-cup-index (.indexOf without-pick-up destination-cup)
-            new-cup-order         (concat
-                                   (alt-subvec (vec without-pick-up) 0 destination-cup-index)
-                                   [destination-cup]
-                                   pick-up
-                                   (alt-subvec (vec without-pick-up) (inc destination-cup-index)))
-            new-selected-cup-index (mod (+ (.indexOf new-cup-order cup) 1) (count new-cup-order))]
+      graph
+      (let [a (first (uber/successors graph current-cup))
+            b (first (uber/successors graph a))
+            c (first (uber/successors graph b))
+            d (first (uber/successors graph c))
+            dest-cup  (get-destination-cup [a b c] current-cup max-value)
+            dest-cup-succ (first (uber/successors graph dest-cup))]
         ;(println "-- move " (inc move) "--")
-        ;(println "cups" rotated-in)
-        ;(println "pick up" pick-up)
-        ;(println "destination:" destination-cup "(index:" destination-cup-index ")")
-        ;(println "---")
-        ;(println without-pick-up)
-        ;(println (alt-subvec (vec without-pick-up) 0 destination-cup-index))
-        (recur
-         new-cup-order
-         (inc move)
-         new-selected-cup-index)))))
+        ;(println "current cup" current-cup)
+        ;(println "pick up" [a b c])
+        ;(println "destination:" dest-cup)
+        (let [new-g (as-> (uber/remove-edges graph [current-cup a]) g
+                      (uber/add-directed-edges g [current-cup d])
+                      (uber/remove-edges g [c d])
+                      (uber/remove-edges g [dest-cup dest-cup-succ])
+                      (uber/add-directed-edges g [c dest-cup-succ])
+                      (uber/add-directed-edges g [dest-cup a]))]
+          (recur new-g
+                 max-value
+                 (first (uber/successors new-g current-cup))
+                 (inc move)))))))
+
+(defn get-all-nodes [g start]
+  (loop [suc []
+         s start]
+    (let [new-suc (uber/successors g s)]
+      (if (>= (.indexOf suc (first new-suc)) 0)
+        suc
+        (recur (concat suc new-suc) (first new-suc))))))
 
 (defn part1 [in]
-  (as-> (move in 100) cups
-    (rotate cups (mod (+ (.indexOf cups 1) 1) (count cups)))
-    (vec cups)
-    (subvec cups 0 (- (count cups) 1))
-    (str/join "" cups)
-    ))
+  (let [g (move in 100)]
+    (str/join (drop-last 1 (get-all-nodes g 1)))))
 
-(part1 inputdata)
+; (time (part1 inputdata))
+; "Elapsed time: 7.771961 msecs"
+; "25398647"
+
+(defn part2 [in]
+  (let [g (move in 10000000)
+        a (first (uber/successors g 1))
+        b (first (uber/successors g a))]
+    (* a b)))
+
+; (time (part2 inputdata-large))
+; "Elapsed time: 346375.467898 msecs"
+; 363807398885
