@@ -1,6 +1,9 @@
 .DS_Store
 .lein-repl-history
 .nrepl-port
+.clj-kondo
+.lsp
+.clj-kondotarget/
 target/
 .clj-kondo
 .lsp
