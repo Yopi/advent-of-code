@@ -21,33 +21,39 @@
   ([k d x] x)
   ([k d x y] (if (= (k x) (k y)) (clojure.lang.MapEntry. d (val x)) (if (> (k x) (k y)) x y)))
   ([k d x y & more]
-   (let [kx (k x) ky (k y)
-         [v kv] (if (= (k x) (k y)) (clojure.lang.MapEntry. d kx) (if (> kx ky) [x kx] [y ky]))]
-     (loop [v v kv kv more more]
-       (if more
-         (let [w (first more)
-               kw (k w)]
-           (if (= kw kv) (clojure.lang.MapEntry. d kw)
-               (if (>= kw kv)
-                 (recur w kw (next more))
-                 (recur v kv (next more)))))
-         v)))))
+    (let [kx     (k x)
+          ky     (k y)
+          [v kv] (if (= (k x) (k y)) (clojure.lang.MapEntry. d kx) (if (> kx ky) [x kx] [y ky]))]
+      (loop [v    v
+             kv   kv
+             more more]
+        (if more
+          (let [w  (first more)
+                kw (k w)]
+            (if (= kw kv) (clojure.lang.MapEntry. d kw)
+              (if (>= kw kv)
+                (recur w kw (next more))
+                (recur v kv (next more)))))
+          v)))))
 
 (defn min-key-default
   ([k d x] x)
   ([k d x y] (if (= (k x) (k y)) (clojure.lang.MapEntry. d (val x)) (if (< (k x) (k y)) x y)))
   ([k d x y & more]
-   (let [kx (k x) ky (k y)
-         [v kv] (if (= (k x) (k y)) (clojure.lang.MapEntry. d kx) (if (< kx ky) [x kx] [y ky]))]
-     (loop [v v kv kv more more]
-       (if more
-         (let [w (first more)
-               kw (k w)]
-           (if (= kw kv) (clojure.lang.MapEntry. d kw)
-               (if (<= kw kv)
-                 (recur w kw (next more))
-                 (recur v kv (next more)))))
-         v)))))
+    (let [kx     (k x)
+          ky     (k y)
+          [v kv] (if (= (k x) (k y)) (clojure.lang.MapEntry. d kx) (if (< kx ky) [x kx] [y ky]))]
+      (loop [v    v
+             kv   kv
+             more more]
+        (if more
+          (let [w  (first more)
+                kw (k w)]
+            (if (= kw kv) (clojure.lang.MapEntry. d kw)
+              (if (<= kw kv)
+                (recur w kw (next more))
+                (recur v kv (next more)))))
+          v)))))
 
 
 (defn get-gamma [in]
@@ -63,20 +69,20 @@
     (map key v)))
 
 (defn part1 [in]
-  (let [gamma (Integer/parseInt (str/join (get-gamma in)) 2)
+  (let [gamma   (Integer/parseInt (str/join (get-gamma in)) 2)
         epsilon (Integer/parseInt (str/join (get-epsilon in)) 2)]
     (* gamma epsilon)))
 
 (defn get-rating [in fnc]
   (loop [data in
-         idx 0]
+         idx  0]
     (if (= (.size data) 1)
       (first data)
       (let [f (fnc data)
             k (nth f idx)]
         (recur
-         (filter #(= (nth % idx) k) data)
-         (+ idx 1))))))
+          (filter #(= (nth % idx) k) data)
+          (+ idx 1))))))
 
 (defn get-oxygen-gen-rating [in]
   (get-rating in get-gamma))
@@ -85,6 +91,6 @@
   (get-rating in get-epsilon))
 
 (defn part2 [in]
-  (let [gamma (Integer/parseInt (str/join (get-oxygen-gen-rating in)) 2)
+  (let [gamma   (Integer/parseInt (str/join (get-oxygen-gen-rating in)) 2)
         epsilon (Integer/parseInt (str/join (get-co2-scrubber-rating in)) 2)]
     (* gamma epsilon)))

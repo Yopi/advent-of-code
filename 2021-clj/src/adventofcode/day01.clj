@@ -5,15 +5,15 @@
 
 (def inputdata
   (map #(Integer. %)
-       (str/split
-        (slurp (clojure.java.io/file (clojure.java.io/resource  "day01/input")))
-        #"\n")))
+    (str/split
+      (slurp (clojure.java.io/file (clojure.java.io/resource  "day01/input")))
+      #"\n")))
 
 (def testdata
   (map #(Integer. %)
-       (str/split
-        (slurp (clojure.java.io/file (clojure.java.io/resource  "day01/testdata")))
-        #"\n")))
+    (str/split
+      (slurp (clojure.java.io/file (clojure.java.io/resource  "day01/testdata")))
+      #"\n")))
 
 (defn count-increased [in]
   (count (filter true? (map #(> (second %) (first %)) (partition 2 1 in)))))
