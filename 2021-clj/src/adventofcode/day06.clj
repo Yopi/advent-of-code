@@ -17,7 +17,7 @@
 (def inputdata (parse-input "input"))
 (def testdata (parse-input "testdata"))
 
-(defn iterate [i days]
+(defn iter [i days]
   (loop [day    1
          fishes i]
     (let [iterated-fishes    (map dec fishes)
@@ -30,8 +30,26 @@
         (recur (inc day) new-fishes)))))
 
 (defn part1 [in]
-  (count (iterate in 80)))
+  (iter in 80))
 
+(defn convert-input [i]
+  (vec
+    (let [v (frequencies i)]
+      (for [i (range 0 9)]
+        (get v i 0)))))
+
+(defn rotate [i]
+  (take (count i) (drop 1 (cycle i))))
+
+(defn iter-part2 [i days]
+  (loop [day    1
+         fishes i]
+    (let [rotated-fishes (vec (rotate fishes))
+          born-fishes (nth rotated-fishes 8)
+          rotated-fishes-with-born (update rotated-fishes 6 (fn [x] (+ x born-fishes)))]
+      (if (= day days)
+        rotated-fishes-with-born
+        (recur (inc day) rotated-fishes-with-born)))))
 
 (defn part2 [in]
-  (count (iterate in 256)))
+  (apply + (iter-part2 (convert-input in) 256)))
