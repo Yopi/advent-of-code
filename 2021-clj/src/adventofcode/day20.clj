@@ -27,16 +27,16 @@
 (def inputdata (parse-input (read-input "input")))
 (def testdata (parse-input (read-input "testdata")))
 
-(defn point [input-image x y]
-  [(get input-image [(- x 1) (- y 1)] ".")
-   (get input-image [x (- y 1)] ".")
-   (get input-image [(+ x 1) (- y 1)] ".")
-   (get input-image [(- x 1) y] ".")
-   (get input-image [x y] ".")
-   (get input-image [(+ x 1) y] ".")
-   (get input-image [(- x 1) (+ y 1)] ".")
-   (get input-image [x (+ y 1)] ".")
-   (get input-image [(+ x 1) (+ y 1)] ".")]
+(defn point [d input-image x y]
+  [(get input-image [(- x 1) (- y 1)] d)
+   (get input-image [x (- y 1)] d)
+   (get input-image [(+ x 1) (- y 1)] d)
+   (get input-image [(- x 1) y] d)
+   (get input-image [x y] d)
+   (get input-image [(+ x 1) y] d)
+   (get input-image [(- x 1) (+ y 1)] d)
+   (get input-image [x (+ y 1)] d)
+   (get input-image [(+ x 1) (+ y 1)] d)]
   )
 
 (defn point-to-binary [point]
@@ -52,21 +52,54 @@
     \# "#"
     "."))
 
-(defn enhance-coords [algo input-image]
+(defn print-map [input-image]
   (let [xs    (map first (keys input-image))
         ys    (map second (keys input-image))
         min-x (dec (apply min xs))
-        max-x (inc (apply max xs))
+        max-x (inc (inc (apply max xs)))
         min-y (dec (apply min ys))
-        max-y (inc (apply min ys))]
-    (apply merge-with (fn [a b] (if (or (= a "#") (= b "#")) "#" "."))
-      (for [y (range (dec min-y) (inc (inc max-y)))
-            x (range (dec min-x) (inc (inc max-x)))]
-        {[x y] (color-point algo (point-to-binary (point input-image x y)))}))))
+        max-y (inc (inc (apply max ys)))]
+        (println min-x max-x)
+        (println min-y max-y)
+      (map println
+        (for [y (range min-y max-y)]
+          (str/join
+          (for [x (range min-x max-x)]
+            (get input-image [x y])))))))
 
-(defn enhance [in]
+
+(defn enhance-coords [[algo input-image] dfault]
+  (let [xs    (map first (keys input-image))
+        ys    (map second (keys input-image))
+        min-x (dec (apply min xs))
+        max-x (inc (inc (apply max xs)))
+        min-y (dec (apply min ys))
+        max-y (inc (inc (apply max ys)))]
+    (apply merge-with (fn [a b] (if (or (= a "#") (= b "#")) "#" "."))
+      (for [y (range min-y max-y)
+            x (range min-x max-x)]
+        {[x y] (color-point algo (point-to-binary (point dfault input-image x y)))}))))
+
+(defn enhance [in dfault]
   (let [[algo input-image] in]
-    ;(enhance-coords algo 
-      (enhance-coords algo input-image)
-    ;)
-    ))
+  [algo
+   (enhance-coords [algo input-image] dfault)]))
+
+(defn count-lit-pixels [image]
+  (count
+    (filter (fn [[k v]] (= v "#"))
+      image)))
+
+(defn p1 [in]
+  (count-lit-pixels
+    (second
+      (enhance
+        (enhance in ".") "#"))))
+
+(defn p2 [in]
+  (let [dfault (cycle ["." "#"])]
+    (loop [data in
+           i 0]
+     (if (= i 50)
+       (count-lit-pixels (second data))
+       (recur (enhance data (nth dfault i)) (inc i))))))
