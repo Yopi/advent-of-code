@@ -1,4 +1,4 @@
-package org.adventofcode
+package org.adventofcode.day02
 
 import scala.io.Source
 import scala.util.Using
