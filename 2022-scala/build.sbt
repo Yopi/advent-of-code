@@ -7,3 +7,6 @@ lazy val root = (project in file("."))
     name := "advent-of-code",
     idePackagePrefix := Some("org.adventofcode")
   )
+
+libraryDependencies += "org.json4s" %% "json4s-native" % "4.1.0-M2"
+libraryDependencies += "org.scala-lang.modules" %% "scala-collection-contrib" % "0.3.0"
